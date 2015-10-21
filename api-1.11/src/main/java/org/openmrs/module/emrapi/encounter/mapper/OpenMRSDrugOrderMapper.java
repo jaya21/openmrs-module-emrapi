@@ -27,6 +27,7 @@ import org.openmrs.api.OrderService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.emrapi.encounter.domain.EncounterTransaction;
 import org.openmrs.module.emrapi.encounter.service.OrderMetadataService;
+import java.io.Console;
 
 /**
  * OpenMRSDrugOrderMapper.
@@ -57,12 +58,21 @@ public class OpenMRSDrugOrderMapper {
         Drug drug = getDrugFrom(drugOrder, openMRSDrugOrder);
 
         if (drug == null) {
-            throw new APIException("No such drug : " + drugOrder.getDrug().getName());
+            if(drugOrder.getDrugNonCoded() == null && drugOrder.getDrugNonCoded().isEmpty() ) {
+                throw new APIException("No such drug : " + drugOrder.getDrug().getName());
+            }
+
+            else {
+                openMRSDrugOrder.setDrugNonCoded(drugOrder.getDrugNonCoded());
+            }
+        }
+        else {
+            openMRSDrugOrder.setDrug(drug);
         }
         if(drug.isRetired() && !isDiscontinuationDrugOrder(drugOrder)){
             throw new APIException("Drug has been retired : " + drugOrder.getDrug().getName());
         }
-        openMRSDrugOrder.setDrug(drug);
+
         openMRSDrugOrder.setEncounter(encounter);
 
         openMRSDrugOrder.setDateActivated(drugOrder.getDateActivated());
@@ -113,6 +123,7 @@ public class OpenMRSDrugOrderMapper {
     }
 
     private Drug getDrugFrom(EncounterTransaction.DrugOrder drugOrder, DrugOrder openMRSDrugOrder) {
+
         if (!isNewDrugOrder(drugOrder)) {
             return openMRSDrugOrder.getDrug();
         }
